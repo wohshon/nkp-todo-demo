@@ -1,0 +1,168 @@
+apiVersion: v1
+kind: Namespace
+metadata:
+ name: todo-demo
+
+---
+apiVersion: postgresql.cnpg.io/v1
+kind: Cluster
+metadata:
+ name: todo-postgres
+ namespace: todo-demo
+spec:
+ instances: 1
+
+ bootstrap:
+   initdb:
+     database: tododb
+     owner: todouser
+
+ storage:
+   size: 1Gi
+
+---
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+ name: todo-web
+ namespace: todo-demo
+spec:
+ replicas: 1
+ selector:
+   matchLabels:
+     app: todo-web
+ template:
+   metadata:
+     labels:
+       app: todo-web
+   spec:
+     containers:
+      - name: todo-web
+        image: docker.io/wohshon/todo-web:v1.0
+        imagePullPolicy: IfNotPresent
+
+        ports:
+          - name: http
+            containerPort: 8080
+
+        env:
+          - name: PORT
+            value: "8080"
+
+          - name: HEADER_MSG
+            value: "Nutanix Kubernetes Platform Demo - Todo App"
+
+          - name: VERSION
+            value: "v1.0"
+
+          - name: POD_NAME
+            valueFrom:
+              fieldRef:
+                fieldPath: metadata.name
+
+          - name: POD_NAMESPACE
+            valueFrom:
+              fieldRef:
+                fieldPath: metadata.namespace
+
+          - name: NODE_NAME
+            valueFrom:
+              fieldRef:
+                fieldPath: spec.nodeName
+
+          - name: NODE_IP
+            valueFrom:
+              fieldRef:
+                fieldPath: status.hostIP
+
+          - name: POD_IP
+            valueFrom:
+              fieldRef:
+                fieldPath: status.podIP
+
+          - name: DB_HOST
+            valueFrom:
+              secretKeyRef:
+                name: todo-postgres-app
+                key: host
+
+          - name: DB_PORT
+            valueFrom:
+              secretKeyRef:
+                name: todo-postgres-app
+                key: port
+
+          - name: DB_NAME
+            valueFrom:
+              secretKeyRef:
+                name: todo-postgres-app
+                key: dbname
+
+          - name: DB_USER
+            valueFrom:
+              secretKeyRef:
+                name: todo-postgres-app
+                key: username
+
+          - name: DB_PASSWORD
+            valueFrom:
+              secretKeyRef:
+                name: todo-postgres-app
+                key: password
+
+        readinessProbe:
+          httpGet:
+            path: /readyz
+            port: http
+          initialDelaySeconds: 10
+          periodSeconds: 10
+
+        livenessProbe:
+          httpGet:
+            path: /healthz
+            port: http
+          initialDelaySeconds: 20
+          periodSeconds: 20
+
+---
+apiVersion: v1
+kind: Service
+metadata:
+ name: todo-web
+ namespace: todo-demo
+spec:
+ selector:
+   app: todo-web
+ ports:
+  - name: http
+    port: 80
+    targetPort: 8080
+ type: ClusterIP
+
+---
+apiVersion: networking.k8s.io/v1
+kind: Ingress
+metadata:
+ name: todo-web
+ namespace: todo-demo
+spec:
+ ingressClassName: kommander-traefik
+ rules:
+  - http:
+      paths:
+        - path: /app
+          pathType: Prefix
+          backend:
+            service:
+              name: todo-web
+              port:
+                number: 80
+
+        - path: /api
+          pathType: Prefix
+          backend:
+            service:
+              name: todo-web
+              port:
+                number: 80
+

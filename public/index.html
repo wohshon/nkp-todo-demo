@@ -1,0 +1,337 @@
+<!doctype html>
+<html lang="en">
+<head>
+ <meta charset="utf-8">
+ <meta name="viewport" content="width=device-width, initial-scale=1">
+ <title>NKP To-Do Demo</title>
+ <link rel="stylesheet" href="/app/styles.css">
+</head>
+
+<body>
+ <main class="shell">
+   <header class="hero">
+     <div>
+       <div class="eyebrow">NUTANIX KUBERNETES PLATFORM</div>
+       <h1 id="headerMsg">Loading...</h1>
+       <p class="subtitle">
+         To-do application
+         <span class="version-badge" id="version">...</span>
+       </p>
+     </div>
+   </header>
+
+   <section class="card runtime-card">
+     <div class="section-heading">
+       <div>
+         <span class="eyebrow">RUNTIME</span>
+         <h2>Pod information</h2>
+       </div>
+       <span class="live-indicator">
+         <span class="live-dot"></span>
+         Live
+       </span>
+     </div>
+
+     <div class="info-grid">
+       <div class="info-item">
+         <span class="info-label">Node name</span>
+         <strong id="nodeName">...</strong>
+       </div>
+
+       <div class="info-item">
+         <span class="info-label">Node IP</span>
+         <strong id="nodeIp">...</strong>
+       </div>
+
+       <div class="info-item">
+         <span class="info-label">Pod name</span>
+         <strong id="podName">...</strong>
+       </div>
+
+       <div class="info-item">
+         <span class="info-label">Pod IP</span>
+         <strong id="podIp">...</strong>
+       </div>
+
+       <div class="info-item">
+         <span class="info-label">Namespace</span>
+         <strong id="podNamespace">...</strong>
+       </div>
+     </div>
+   </section>
+
+   <section class="card">
+     <div class="section-heading">
+       <div>
+         <span class="eyebrow">DATABASE CRUD</span>
+         <h2 id="formTitle">Add to-do</h2>
+       </div>
+       <span class="db-badge">PostgreSQL</span>
+     </div>
+
+     <form id="todoForm">
+       <div class="form-grid">
+         <div class="field">
+           <label for="title">Title</label>
+           <input
+             id="title"
+             type="text"
+             placeholder="What needs to be done?"
+             required
+             maxlength="200"
+           >
+         </div>
+
+         <div class="field">
+          <label for="description">Description</label>
+           <input
+             id="description"
+             type="text"
+             placeholder="Add a short description"
+             maxlength="2000"
+           >
+         </div>
+       </div>
+
+       <div class="form-actions">
+         <label class="checkbox-label">
+           <input id="completed" type="checkbox">
+           <span>Completed</span>
+         </label>
+
+         <div class="button-group">
+           <button type="submit" class="primary-button">Save to-do</button>
+           <button type="button" class="cancel" id="cancelEdit" hidden>
+             Cancel
+           </button>
+         </div>
+       </div>
+
+       <div class="status" id="status"></div>
+     </form>
+   </section>
+
+   <section class="card">
+    <div class="section-heading table-heading">
+       <div>
+         <span class="eyebrow">TASKS</span>
+         <h2>To-do items</h2>
+       </div>
+       <span class="count-badge" id="todoCount">0 items</span>
+     </div>
+
+     <div class="table-wrapper">
+       <table>
+         <thead>
+           <tr>
+             <th>Title</th>
+             <th>Description</th>
+             <th>Status</th>
+             <th class="actions-column">Actions</th>
+           </tr>
+         </thead>
+         <tbody id="todoRows"></tbody>
+       </table>
+
+       <div class="empty-state" id="emptyState" hidden>
+         <div class="empty-icon">✓</div>
+         <strong>No to-dos yet</strong>
+         <span>Add your first task above.</span>
+       </div>
+     </div>
+   </section>
+ </main>
+
+ <script>
+   let editingId = null;
+   let todos = [];
+
+   const form = document.getElementById("todoForm");
+   const formTitle = document.getElementById("formTitle");
+   const titleInput = document.getElementById("title");
+   const descriptionInput = document.getElementById("description");
+   const completedInput = document.getElementById("completed");
+   const cancelButton = document.getElementById("cancelEdit");
+   const statusElement = document.getElementById("status");
+   const rows = document.getElementById("todoRows");
+   const emptyState = document.getElementById("emptyState");
+   const todoCount = document.getElementById("todoCount");
+
+   const headerMsg = document.getElementById("headerMsg");
+   const version = document.getElementById("version");
+   const nodeName = document.getElementById("nodeName");
+   const nodeIp = document.getElementById("nodeIp");
+   const podName = document.getElementById("podName");
+   const podIp = document.getElementById("podIp");
+  const podNamespace = document.getElementById("podNamespace");
+
+   async function loadInfo() {
+     const response = await fetch("/api/info");
+
+     if (!response.ok) {
+       throw new Error("Unable to load runtime information");
+    }
+
+     const info = await response.json();
+
+     headerMsg.textContent = info.headerMsg;
+    version.textContent = info.version;
+     nodeName.textContent = info.nodeName;
+    nodeIp.textContent = info.nodeIp;
+     podName.textContent = info.podName;
+     podIp.textContent = info.podIp;
+     podNamespace.textContent = info.podNamespace;
+  }
+
+  async function loadTodos() {
+     const response = await fetch("/api/todos");
+
+     if (!response.ok) {
+       throw new Error("Unable to load to-dos");
+     }
+
+     todos = await response.json();
+
+     rows.replaceChildren();
+     todoCount.textContent = `${todos.length} ${
+       todos.length === 1 ? "item" : "items"
+    }`;
+
+   emptyState.hidden = todos.length !== 0;
+
+     for (const todo of todos) {
+      const row = document.createElement("tr");
+
+       const titleCell = document.createElement("td");
+       titleCell.textContent = todo.title;
+       titleCell.className = todo.completed ? "completed" : "";
+
+       const descriptionCell = document.createElement("td");
+      descriptionCell.textContent = todo.description || "—";
+     descriptionCell.className = "description-cell";
+
+       const statusCell = document.createElement("td");
+       const statusBadge = document.createElement("span");
+       statusBadge.textContent = todo.completed ? "Completed" : "Open";
+     statusBadge.className = todo.completed
+        ? "status-badge completed-badge"
+         : "status-badge open-badge";
+       statusCell.appendChild(statusBadge);
+
+       const actionsCell = document.createElement("td");
+       actionsCell.className = "actions-cell";
+
+       const editButton = document.createElement("button");
+       editButton.type = "button";
+      editButton.textContent = "Edit";
+      editButton.className = "small-button";
+       editButton.onclick = () => editTodo(todo.id);
+
+      const deleteButton = document.createElement("button");
+       deleteButton.type = "button";
+     deleteButton.textContent = "Delete";
+       deleteButton.className = "small-button delete";
+       deleteButton.onclick = () => deleteTodo(todo.id);
+
+       actionsCell.append(editButton, deleteButton);
+       row.append(titleCell, descriptionCell, statusCell, actionsCell);
+       rows.appendChild(row);
+     }
+   }
+
+   function editTodo(id) {
+     const todo = todos.find(item => item.id === id);
+
+     if (!todo) {
+       return;
+     }
+
+     editingId = id;
+     titleInput.value = todo.title;
+     descriptionInput.value = todo.description;
+     completedInput.checked = todo.completed;
+
+     formTitle.textContent = "Edit to-do";
+     cancelButton.hidden = false;
+     titleInput.focus();
+
+     window.scrollTo({
+       top: 0,
+       behavior: "smooth"
+     });
+   }
+
+   function resetForm() {
+     editingId = null;
+     form.reset();
+     formTitle.textContent = "Add to-do";
+     cancelButton.hidden = true;
+   }
+
+   cancelButton.onclick = resetForm;
+
+   form.onsubmit = async event => {
+     event.preventDefault();
+
+     const response = await fetch(
+       editingId ? `/api/todos/${editingId}` : "/api/todos",
+       {
+         method: editingId ? "PUT" : "POST",
+         headers: {
+           "Content-Type": "application/json"
+         },
+         body: JSON.stringify({
+           title: titleInput.value,
+           description: descriptionInput.value,
+           completed: completedInput.checked
+         })
+       }
+     );
+
+     if (!response.ok) {
+       const error = await response.json();
+       statusElement.textContent = error.error || "Request failed";
+       statusElement.className = "status error-status";
+       return;
+     }
+
+     statusElement.textContent = editingId
+       ? "To-do updated successfully"
+       : "To-do saved successfully";
+     statusElement.className = "status success-status";
+
+     resetForm();
+     await loadTodos();
+   };
+
+   async function deleteTodo(id) {
+     if (!confirm("Delete this to-do?")) {
+       return;
+     }
+
+     const response = await fetch(`/api/todos/${id}`, {
+       method: "DELETE"
+     });
+
+     if (!response.ok) {
+       statusElement.textContent = "Unable to delete to-do";
+       statusElement.className = "status error-status";
+       return;
+     }
+
+     statusElement.textContent = "To-do deleted";
+     statusElement.className = "status success-status";
+
+     await loadTodos();
+   }
+
+   Promise.all([loadInfo(), loadTodos()])
+     .catch(error => {
+       console.error(error);
+       statusElement.textContent = "Unable to load application data";
+       statusElement.className = "status error-status";
+     });
+ </script>
+</body>
+</html>
+
