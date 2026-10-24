@@ -83,31 +83,31 @@ spec:
           - name: DB_HOST
             valueFrom:
               secretKeyRef:
-                name: todo-postgres-app
+                name: todo-db
                 key: host
 
           - name: DB_PORT
             valueFrom:
               secretKeyRef:
-                name: todo-postgres-app
+                name: todo-db
                 key: port
 
           - name: DB_NAME
             valueFrom:
               secretKeyRef:
-                name: todo-postgres-app
+                name: todo-db
                 key: dbname
 
           - name: DB_USER
             valueFrom:
               secretKeyRef:
-                name: todo-postgres-app
+                name: todo-db
                 key: username
 
           - name: DB_PASSWORD
             valueFrom:
               secretKeyRef:
-                name: todo-postgres-app
+                name: todo-db
                 key: password
 
         readinessProbe:

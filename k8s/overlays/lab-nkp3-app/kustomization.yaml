@@ -1,0 +1,24 @@
+# Site 3 (nkp3), app only: the app runs and is healthy, but has NO Gslb resources,
+# so k8gb does not offer nkp3 for aa / ap / geo yet.
+# Deploy this before the talk. Live: kubectl apply -k ../lab-nkp3 adds the Gslbs.
+apiVersion: kustomize.config.k8s.io/v1beta1
+kind: Kustomization
+resources:
+  - ../lab-nkp3
+
+patches:
+  - patch: |-
+      $patch: delete
+      apiVersion: k8gb.io/v1beta1
+      kind: Gslb
+      metadata: {name: todo-web-aa, namespace: todo-demo}
+  - patch: |-
+      $patch: delete
+      apiVersion: k8gb.io/v1beta1
+      kind: Gslb
+      metadata: {name: todo-web-ap, namespace: todo-demo}
+  - patch: |-
+      $patch: delete
+      apiVersion: k8gb.io/v1beta1
+      kind: Gslb
+      metadata: {name: todo-web-geo, namespace: todo-demo}

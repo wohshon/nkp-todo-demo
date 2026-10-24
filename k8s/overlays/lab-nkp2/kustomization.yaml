@@ -1,0 +1,34 @@
+# Site 2 (nkp2): the app and the global names, but NO database of its own.
+# The app uses nkp1's database until the NDK restore brings one up here
+# (then: app-db/db.sh use-local).
+apiVersion: kustomize.config.k8s.io/v1beta1
+kind: Kustomization
+resources:
+  - ../../base
+
+patches:
+  - patch: |-
+      $patch: delete
+      apiVersion: postgresql.cnpg.io/v1
+      kind: Cluster
+      metadata:
+        name: todo-postgres
+        namespace: todo-demo
+
+configMapGenerator:
+  - name: gslb-env
+    envs: [env.properties]
+    options:
+      disableNameSuffixHash: true
+      annotations:
+        config.kubernetes.io/local-config: "true"   # carries values only; not deployed
+
+replacements:
+  - source: {kind: ConfigMap, name: gslb-env, fieldPath: data.AA_HOST}
+    targets: [{select: {kind: Ingress, name: todo-web-aa}, fieldPaths: [spec.rules.0.host]}]
+  - source: {kind: ConfigMap, name: gslb-env, fieldPath: data.AP_HOST}
+    targets: [{select: {kind: Ingress, name: todo-web-ap}, fieldPaths: [spec.rules.0.host]}]
+  - source: {kind: ConfigMap, name: gslb-env, fieldPath: data.GEO_HOST}
+    targets: [{select: {kind: Ingress, name: todo-web-geo}, fieldPaths: [spec.rules.0.host]}]
+  - source: {kind: ConfigMap, name: gslb-env, fieldPath: data.PRIMARY_GEOTAG}
+    targets: [{select: {kind: Gslb, name: todo-web-ap}, fieldPaths: [spec.strategy.primaryGeoTag]}]
