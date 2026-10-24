@@ -1,15 +1,11 @@
-# HPOC nkp2 = dev-cluster2: app + global names (aa, ap), no database (uses nkp1's via app-db/db.sh use-remote).
+# HPOC nkp2 = dev-cluster2: app + global names (aa, ap) + its own CNPG database instance.
+# The app uses nkp1's database (app-db/db.sh use-remote) until you switch it with app-db/db.sh use-local.
 apiVersion: kustomize.config.k8s.io/v1beta1
 kind: Kustomization
 resources:
   - ../../base
 
 patches:
-  - patch: |-
-      $patch: delete
-      apiVersion: postgresql.cnpg.io/v1
-      kind: Cluster
-      metadata: {name: todo-postgres, namespace: todo-demo}
   - patch: |-
       $patch: delete
       apiVersion: k8gb.io/v1beta1
