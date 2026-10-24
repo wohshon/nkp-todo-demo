@@ -1,10 +1,10 @@
-# HPOC nkp2, app only: everything in hpoc-nkp2 except the Gslb resources.
+# Site 1, app only: everything in site1 except the Gslb resources.
 # Use it before k8gb is installed (no Gslb CRD yet), or to add the site to global routing
-# later with: kubectl apply -k ../hpoc-nkp2
+# later with: kubectl apply -k ../site1
 apiVersion: kustomize.config.k8s.io/v1beta1
 kind: Kustomization
 resources:
-  - ../hpoc-nkp2
+  - ../site1
 
 patches:
   - patch: |-

@@ -1,0 +1,29 @@
+# The geo global name: Ingress + Gslb with the geoip strategy.
+# Apply on every site AFTER GeoIP is enabled in k8gb (k8gb-nkp-demo: ENABLE_GEOIP=1 + 20-k8gb.sh).
+apiVersion: networking.k8s.io/v1
+kind: Ingress
+metadata:
+  name: todo-web-geo
+  namespace: todo-demo
+spec:
+  ingressClassName: kommander-traefik
+  rules:
+    - host: geo.gslb.example.local
+      http:
+        paths:
+          - {path: /app, pathType: Prefix, backend: {service: {name: todo-web, port: {number: 80}}}}
+          - {path: /api, pathType: Prefix, backend: {service: {name: todo-web, port: {number: 80}}}}
+---
+apiVersion: k8gb.io/v1beta1
+kind: Gslb
+metadata:
+  name: todo-web-geo
+  namespace: todo-demo
+spec:
+  resourceRef:
+    apiVersion: networking.k8s.io/v1
+    kind: Ingress
+    name: todo-web-geo
+  strategy:
+    type: geoip
+    dnsTtlSeconds: 10
