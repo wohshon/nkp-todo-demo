@@ -1,0 +1,19 @@
+# HPOC nkp1, app only: everything in hpoc-nkp1 except the Gslb resources.
+# Use it before k8gb is installed (no Gslb CRD yet), or to add the site to global routing
+# later with: kubectl apply -k ../hpoc-nkp1
+apiVersion: kustomize.config.k8s.io/v1beta1
+kind: Kustomization
+resources:
+  - ../hpoc-nkp1
+
+patches:
+  - patch: |-
+      $patch: delete
+      apiVersion: k8gb.io/v1beta1
+      kind: Gslb
+      metadata: {name: todo-web-aa, namespace: todo-demo}
+  - patch: |-
+      $patch: delete
+      apiVersion: k8gb.io/v1beta1
+      kind: Gslb
+      metadata: {name: todo-web-ap, namespace: todo-demo}
