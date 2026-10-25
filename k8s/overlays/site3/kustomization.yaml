@@ -36,3 +36,5 @@ replacements:
     targets: [{select: {kind: Ingress, name: todo-web-ap}, fieldPaths: [spec.rules.0.host]}]
   - source: {kind: ConfigMap, name: gslb-env, fieldPath: data.PRIMARY_GEOTAG}
     targets: [{select: {kind: Gslb, name: todo-web-ap}, fieldPaths: [spec.strategy.primaryGeoTag]}]
+  - source: {kind: ConfigMap, name: gslb-env, fieldPath: data.SITE_BANNER}
+    targets: [{select: {kind: Deployment, name: todo-web}, fieldPaths: ["spec.template.spec.containers.[name=todo-web].env.[name=HEADER_MSG].value"]}]
