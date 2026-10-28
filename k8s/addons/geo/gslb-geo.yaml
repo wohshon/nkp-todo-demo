@@ -26,4 +26,4 @@ spec:
     name: todo-web-geo
   strategy:
     type: geoip
-    dnsTtlSeconds: 10
+    dnsTtlSeconds: 5
