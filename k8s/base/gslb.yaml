@@ -30,7 +30,7 @@ spec:
     name: todo-web-aa
   strategy:
     type: roundRobin          # active-active: every healthy site
-    dnsTtlSeconds: 10
+    dnsTtlSeconds: 5
 ---
 apiVersion: networking.k8s.io/v1
 kind: Ingress
@@ -59,7 +59,7 @@ spec:
   strategy:
     type: failover            # active-passive: the primary while it is healthy
     primaryGeoTag: site1
-    dnsTtlSeconds: 10
+    dnsTtlSeconds: 5
 ---
 apiVersion: networking.k8s.io/v1
 kind: Ingress
@@ -87,4 +87,4 @@ spec:
     name: todo-web-geo
   strategy:
     type: geoip               # the site matching the query's source network
-    dnsTtlSeconds: 10
+    dnsTtlSeconds: 5
